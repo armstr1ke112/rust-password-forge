@@ -1,4 +1,4 @@
-import argon2 from 'argon2-browser';
+import { argon2id, sha256 } from 'hash-wasm';
 
 const CHARSET = 
   "ABCDEFGHIJKLMNOPQRSTUVWXYZ" +
@@ -6,12 +6,6 @@ const CHARSET =
   "0123456789" +
   "!@#$%^&*()-_=+[]{}|;:'\",.<>/?`~" +
   "§±×÷√∞≠≈€£¥₿©®™µΩπδλΣΦΨΞ";
-
-async function sha256(message: string): Promise<Uint8Array> {
-  const msgBuffer = new TextEncoder().encode(message);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-  return new Uint8Array(hashBuffer);
-}
 
 export async function derivePassword(
   master: string,
@@ -22,26 +16,24 @@ export async function derivePassword(
     throw new Error("Password length must be at least 16 characters");
   }
 
-  // Salt = SHA256(domain)
+  // Salt = SHA256(domain) - same as Rust implementation
   const saltHash = await sha256(domain);
+  const salt = new Uint8Array(saltHash.match(/.{2}/g)!.map(byte => parseInt(byte, 16)));
 
-  // Argon2id with the same parameters as Rust code
-  const result = await argon2.hash({
-    pass: master,
-    salt: saltHash,
-    time: 4,        // iterations
-    mem: 65536,     // 64 MB RAM
+  // Argon2id with same parameters as Rust code:
+  // 64 MB memory, 4 iterations, 2 parallelism
+  const hash = await argon2id({
+    password: master,
+    salt: salt,
     parallelism: 2,
-    hashLen: length * 2,
-    type: argon2.ArgonType.Argon2id,
+    iterations: 4,
+    memorySize: 65536, // 64 MB
+    hashLength: length * 2,
+    outputType: 'binary',
   });
 
-  // Convert bytes to characters using CHARSET
-  const hashArray = result.hash instanceof Uint8Array 
-    ? Array.from(result.hash) 
-    : Array.from(new Uint8Array(result.hash as ArrayBuffer));
-  
-  const password = hashArray
+  // Convert bytes to characters using CHARSET - same as Rust
+  const password = Array.from(hash)
     .slice(0, length)
     .map((byte: number) => CHARSET[byte % CHARSET.length])
     .join('');
