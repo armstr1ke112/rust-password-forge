@@ -41,6 +41,43 @@ export async function derivePassword(
   return password;
 }
 
+// Microsoft-compatible charset: uppercase, lowercase, digits, and allowed special chars
+const MS_UPPER = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+const MS_LOWER = "abcdefghijklmnopqrstuvwxyz";
+const MS_DIGITS = "0123456789";
+const MS_SPECIAL = "!@#$%^&*-_+=[]{}|\\:',.<>?/`~\"();";
+const MS_CHARSET = MS_UPPER + MS_LOWER + MS_DIGITS + MS_SPECIAL;
+
+export function generateMicrosoftPassword(length: number = 32): string {
+  if (length < 16) {
+    throw new Error("Password length must be at least 16 characters");
+  }
+
+  const array = new Uint8Array(length);
+  crypto.getRandomValues(array);
+
+  // Guarantee at least one from each category
+  const guaranteed = [
+    MS_UPPER[crypto.getRandomValues(new Uint8Array(1))[0] % MS_UPPER.length],
+    MS_LOWER[crypto.getRandomValues(new Uint8Array(1))[0] % MS_LOWER.length],
+    MS_DIGITS[crypto.getRandomValues(new Uint8Array(1))[0] % MS_DIGITS.length],
+    MS_SPECIAL[crypto.getRandomValues(new Uint8Array(1))[0] % MS_SPECIAL.length],
+  ];
+
+  const rest = Array.from(array)
+    .slice(0, length - guaranteed.length)
+    .map((byte) => MS_CHARSET[byte % MS_CHARSET.length]);
+
+  // Shuffle guaranteed chars into random positions
+  const combined = [...guaranteed, ...rest];
+  for (let i = combined.length - 1; i > 0; i--) {
+    const j = crypto.getRandomValues(new Uint8Array(1))[0] % (i + 1);
+    [combined[i], combined[j]] = [combined[j], combined[i]];
+  }
+
+  return combined.join('');
+}
+
 export function getPasswordStrength(password: string): {
   score: number;
   label: string;

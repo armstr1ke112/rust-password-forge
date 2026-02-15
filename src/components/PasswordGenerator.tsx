@@ -1,11 +1,11 @@
 import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Eye, EyeOff, Copy, Check, Loader2, Shield, Zap } from 'lucide-react';
+import { Eye, EyeOff, Copy, Check, Loader2, Shield, Zap, Shuffle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
-import { derivePassword, getPasswordStrength } from '@/lib/passwordGenerator';
+import { derivePassword, generateMicrosoftPassword, getPasswordStrength } from '@/lib/passwordGenerator';
 import { useToast } from '@/hooks/use-toast';
 
 export function PasswordGenerator() {
@@ -133,24 +133,46 @@ export function PasswordGenerator() {
             </div>
           </div>
 
-          {/* Generate Button */}
-          <Button
-            onClick={handleGenerate}
-            disabled={isGenerating || !masterPassword || !domain}
-            className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-semibold h-12 text-base glow-primary transition-all"
-          >
-            {isGenerating ? (
-              <>
-                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                Deriving...
-              </>
-            ) : (
-              <>
-                <Zap className="w-5 h-5 mr-2" />
-                Generate Password
-              </>
-            )}
-          </Button>
+          {/* Generate Buttons */}
+          <div className="flex gap-3">
+            <Button
+              onClick={handleGenerate}
+              disabled={isGenerating || !masterPassword || !domain}
+              className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90 font-semibold h-12 text-base glow-primary transition-all"
+            >
+              {isGenerating ? (
+                <>
+                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                  Deriving...
+                </>
+              ) : (
+                <>
+                  <Zap className="w-5 h-5 mr-2" />
+                  Derive
+                </>
+              )}
+            </Button>
+            <Button
+              onClick={() => {
+                try {
+                  const pw = generateMicrosoftPassword(length);
+                  setGeneratedPassword(pw);
+                } catch (error) {
+                  toast({
+                    title: "Generation failed",
+                    description: error instanceof Error ? error.message : "Unknown error",
+                    variant: "destructive",
+                  });
+                }
+              }}
+              variant="outline"
+              className="h-12 px-4 border-border hover:border-primary hover:text-primary transition-all"
+              title="Random Microsoft-compatible password"
+            >
+              <Shuffle className="w-5 h-5 mr-1" />
+              <span className="text-sm font-semibold">MS</span>
+            </Button>
+          </div>
 
           {/* Generated Password */}
           <AnimatePresence mode="wait">
