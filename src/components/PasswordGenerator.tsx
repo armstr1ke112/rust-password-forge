@@ -214,8 +214,8 @@ export function PasswordGenerator() {
                 {strength && (
                   <div className="space-y-2">
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Strength</span>
-                      <span className="font-semibold text-primary text-glow">{strength.label}</span>
+                      <span className="text-muted-foreground">Entropy</span>
+                      <span className="font-semibold text-primary text-glow">{strength.entropyBits} bit — {strength.label}</span>
                     </div>
                     <div className="h-2 bg-secondary rounded-full overflow-hidden">
                       <motion.div
