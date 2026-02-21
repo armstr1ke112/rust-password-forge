@@ -81,22 +81,32 @@ export function generateMicrosoftPassword(length: number = 32): string {
 export function getPasswordStrength(password: string): {
   score: number;
   label: string;
+  entropyBits: number;
 } {
-  let score = 0;
-  
-  if (password.length >= 16) score += 1;
-  if (password.length >= 32) score += 1;
-  if (password.length >= 48) score += 1;
-  if (/[A-Z]/.test(password)) score += 1;
-  if (/[a-z]/.test(password)) score += 1;
-  if (/[0-9]/.test(password)) score += 1;
-  if (/[!@#$%^&*()\-_=+\[\]{}|;:'",.<>/?`~]/.test(password)) score += 1;
-  if (/[§±×÷√∞≠≈€£¥₿©®™µΩπδλΣΦΨΞ]/.test(password)) score += 1;
+  // Calculate actual charset size used in the password
+  let charsetSize = 0;
+  if (/[A-Z]/.test(password)) charsetSize += 26;
+  if (/[a-z]/.test(password)) charsetSize += 26;
+  if (/[0-9]/.test(password)) charsetSize += 10;
+  if (/[!@#$%^&*()\-_=+\[\]{}|;:'",.<>/?`~\\]/.test(password)) charsetSize += 32;
+  if (/[§±×÷√∞≠≈€£¥₿©®™µΩπδλΣΦΨΞ]/.test(password)) charsetSize += 18;
 
-  const labels = ['Weak', 'Fair', 'Good', 'Strong', 'Very Strong', 'Excellent', 'Maximum', 'INSANE'];
-  
-  return {
-    score: Math.min(score, 8),
-    label: labels[Math.min(score, labels.length - 1)],
-  };
+  const entropyBits = charsetSize > 0
+    ? Math.floor(password.length * Math.log2(charsetSize))
+    : 0;
+
+  let label: string;
+  if (entropyBits < 64) label = 'Weak';
+  else if (entropyBits < 98) label = 'Fair';
+  else if (entropyBits < 128) label = 'Good';
+  else if (entropyBits < 192) label = 'Strong';
+  else if (entropyBits < 256) label = 'Very Strong';
+  else if (entropyBits < 384) label = 'Excellent';
+  else if (entropyBits < 512) label = 'Maximum';
+  else label = 'INSANE';
+
+  // Normalize score to 0-8 for the progress bar
+  const score = Math.min(Math.floor(entropyBits / 64), 8);
+
+  return { score, label, entropyBits };
 }
