@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Eye, EyeOff, Copy, Check, Loader2, Shield, Zap, Shuffle } from 'lucide-react';
+import { Eye, EyeOff, Copy, Check, Loader2, Shield, Zap, Shuffle, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -212,7 +212,7 @@ export function PasswordGenerator() {
 
                 {/* Strength Indicator */}
                 {strength && (
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">Entropy</span>
                       <span className="font-semibold text-primary text-glow">{strength.entropyBits} bit — {strength.label}</span>
@@ -228,6 +228,18 @@ export function PasswordGenerator() {
                         }}
                       />
                     </div>
+                    {strength.entropyBits < 98 && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="flex items-start gap-2 p-3 rounded-md bg-destructive/10 border border-destructive/30"
+                      >
+                        <AlertTriangle className="w-4 h-4 text-destructive mt-0.5 shrink-0" />
+                        <p className="text-xs text-destructive">
+                          Слабый пароль! Энтропия ниже 98 бит. Увеличьте длину или используйте более широкий набор символов.
+                        </p>
+                      </motion.div>
+                    )}
                   </div>
                 )}
               </motion.div>
